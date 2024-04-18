@@ -1,34 +1,35 @@
 import { useEffect, useRef, useState } from "react";
 
 function SearchMovies() {
-
-
-	
-    const [search, setSearch] = useState([]);
-    const [searchKeyword, setSearchKeyword] = useState("Godzilla");
+    const [searchMovies, setsearchMovies] = useState([]);
+    const [searchKeyword, setSearchKeyword] = useState("");
     const userKeyword = useRef();
-
     const apiKey = '3b6e9494';
 
-    const getMovies = async (keyword) => {
-        const response = await fetch(`http://www.omdbapi.com/?s=${keyword}&apikey=${apiKey}`);
-        const data = await response.json();
-        return data.Search || [];
-    }
-
     const setKeyword = (e) => {
-		e.preventDefault();
+        e.preventDefault();
         setSearchKeyword(userKeyword.current.value);
     }
 
     useEffect(() => {
-        const fetchMovies = async () => {
-            const movies = await getMovies(searchKeyword);
-            setSearch(movies);
+        const getMovies = async () => {
+            try {
+                const response = await fetch(`http://www.omdbapi.com/?s=${searchKeyword}&apikey=${apiKey}`);
+                const data = await response.json();
+                if (data.Error) {
+                    throw new Error("Hubo un error al realizar la petición!!!")
+                }
+                const moviesUpdate = data.Search;
+                setsearchMovies(moviesUpdate);
+            } catch (error) {
+                console.log(error);
+            }
         }
-
-        fetchMovies();
-    }, [searchKeyword]);
+        getMovies();
+        return () => {
+            setsearchMovies([]);
+        };
+    }, [searchKeyword, apiKey]);
 
     return (
         <div className="container-fluid">
@@ -49,7 +50,7 @@ function SearchMovies() {
                         <div className="col-12">
                             <h2>Películas para la palabra: {searchKeyword}</h2>
                         </div>
-                        {search.length > 0 && search.map((movie, i) => (
+                        {searchMovies && searchMovies.length > 0 && searchMovies.map((movie, i) => (
                             <div className="col-sm-6 col-md-3 my-4" key={i}>
                                 <div className="card shadow mb-4">
                                     <div className="card-header py-3">
@@ -70,7 +71,7 @@ function SearchMovies() {
                             </div>
                         ))}
                     </div>
-                    {search.length === 0 && <div className="alert alert-warning text-center">No se encontraron películas</div>}
+                    {searchMovies && searchMovies.length === 0 && <div className="alert alert-warning text-center">No se encontraron películas</div>}
                 </>
             ) : (
                 <div className="alert alert-danger text-center my-4 fs-2">Eyyyy... ¿PUSISTE TU APIKEY?</div>
